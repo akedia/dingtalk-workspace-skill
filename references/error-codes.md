@@ -1,181 +1,80 @@
 # 错误码说明
+全产品错误参考 + 调试流程。Agent 遇到错误时查阅此文档。
 
-## 通用错误 (所有产品)
+## 错误返回格式
 
-### 认证失败 (401 / token expired)
-**原因**: Token 过期或未登录
-**解决**:
-```bash
-dws auth status    # 检查状态
-dws auth login     # 重新登录
+```json
+{"success": false, "code": "InvalidParameter", "message": "baseId is required"}
+{"success": false, "code": "AUTH_TOKEN_EXPIRED", "message": "Token验证失败"}
+{"success": false, "code": "PermissionDenied", "message": "无权限访问该资源"}
 ```
 
-### 请求超时
-**原因**: 网络慢或服务端响应慢
-**解决**: 增加超时时间 `--timeout 60` 重试
+## 错误分类与 Agent 行为
 
-### 网络连接失败
-**原因**: 无法连接 MCP Server
-**解决**:
-```bash
-dws aitable base list --format json  # 用最简命令验证连接
-```
+### 可自行修复
+- 参数缺失 / 格式错误 / ID 无效 → 检查参数后修正重试
 
----
+### 需用户介入
+- 权限不足 / 资源不存在 / 配额超限 → 报告完整错误信息给用户，不要自行尝试替代方案
 
-## aitable 专用错误
-
-> 以下内容针对新版 schema：`baseId / tableId / fieldId / recordId`。
-
-### 参数体系写错
-**现象**
-- 还在用旧参数：`dentryUuid` / `sheetIdOrName` / `--doc` / `--sheet`（这些都已废弃）
-- 接口直接报参数缺失 / 无效请求
-
-**原因**
-- MCP server 已升级到新 schema，但脚本或命令没跟上
-
-**解决**
-- Base 级：用 `--base-id`（对应 `baseId`）
-- Table 级：用 `--table-id`（对应 `tableId`）
-- Field 级：用 `--field-id`（对应 `fieldId`）
-- Record 级：用 `--record-ids`（对应 `recordId`）
+## 通用错误
+- 请求超时 — 网络慢或服务端响应慢 → `--timeout 60` 重试
+- 网络连接失败 — 无法连接 MCP Server → 用最简命令验证: `dws contact user get-self --format json`
 
 ---
 
-### 参数名大小写或命名风格错误
-**现象**
-- 参数看起来传了，但服务端像没收到
-- 报字段缺失 / 资源不存在
+## aitable 高频错误
 
-**原因**
-- CLI flag 使用 kebab-case（`--base-id`），JSON 内使用 camelCase（`baseId`）
+> 参数体系: `baseId / tableId / fieldId / recordId`。CLI flag 用 kebab-case（`--base-id`），JSON 内用 camelCase（`baseId`）。
 
-**正确示例**
-```bash
-dws aitable base get --base-id <BASE_ID> --format json
-dws aitable table update --base-id <BASE_ID> --table-id <TABLE_ID> --name '新表名' --format json
-```
+- 参数缺失 / 无效请求 — 还在用旧参数 `dentryUuid` / `--doc` / `--sheet` → 改用 `--base-id` / `--table-id` / `--field-id` / `--record-ids`
+- 参数传了但服务端没收到 — flag 用了 camelCase（如 `--baseId`）→ flag 用 kebab-case: `--base-id <ID>`
+- `record query --filters` 无结果 — 单选/多选过滤用了 option name 而非 id → 先 `field get` 读取 options，用 option id 过滤
+- record create/update 失败 — `cells` key 用了字段名（应为 fieldId）；特殊字段格式错误 → 先 `table get` 拿字段目录；url 传 `{"text":"..","link":".."}`
+- 更新选项后历史数据异常 — 更新 options 没传完整列表 / 没保留原 id → 先 `field get` 取完整配置，保留已有 option 的 id
+- `cannot delete the last table` — 该表是 Base 最后一张表 → 先新建表再删旧表，或用 `base delete`
+- `formula` 类型 `not supported yet` — 部分字段类型暂不支持 API 创建 → 复杂字段拆开单独创建，先建基础结构
 
-**错误示例**
-```bash
-dws aitable base get --baseId <BASE_ID>     # 错: flag 不是 camelCase
-dws aitable base get --doc <UUID>           # 错: 旧参数
-```
+**排查链路**: `base list` → `base get`(→tableId) → `table get`(→fieldId) → `record query`(→recordId)。别跳步，别猜 ID。
+
+**批量上限**: record 100 条 / field 15 个 / table·field 详情 10 个。
 
 ---
 
-### 查询记录时单选 / 多选过滤无结果
-**现象**
-- 明明记录存在，但 `record query --filters` 查不出来
+## approval 高频错误
 
-**原因**
-- 对 `singleSelect / multipleSelect` 字段做过滤时，建议传 **option id**
-
-**解决**
-1. 先 `dws aitable field get --base-id <BASE_ID> --table-id <TABLE_ID> --format json` 读取字段完整配置
-2. 找到 options 里的 id
-3. 在 filters 里传 id
+- approve/reject 缺少 taskId — 未先获取审批任务 → 先 `approval tasks --instance-id <ID>` 获取 taskId
+- list-initiated 缺少 processCode — 未查询审批表单 → 先 `approval list-forms` 获取 processCode
+- 撤销审批失败 — 非本人发起的审批 → `revoke` 只能撤销自己发起的审批
 
 ---
 
-### create / update 记录写入失败
-**常见原因**
-- `cells` 的 key 用了字段名，不是 `fieldId`
-- `url` 字段直接传字符串（应传 `{"text":"显示文本","link":"https://..."}`）
-- `richText` 字段直接传字符串（应传 `{"markdown":"**加粗**"}`）
-- `group` 字段写成 `openConversationId`（应传 `[{"cid":"xxx"}]`）
-- 单次超过 100 条
+## chat 高频错误
 
-**解决**
-- 先用 `dws aitable table get --base-id <BASE_ID> --format json` 拿字段目录
-- 必要时 `dws aitable field get` 获取完整配置
+- 参数互斥报错 — `--group` 与 `--users` 同时传入 → 群聊用 `--group`，单聊用 `--users`，二者互斥
+- 群不存在 — openConversationId 不正确 → `chat search --query "群名"` 获取正确 ID
+- 机器人无法添加到群 — 当前用户非群管理员 → 报告给用户，需群管理员操作
+- Webhook Token 无效 — token 不正确或已失效 → 确认 Webhook Token 来源正确
+- 添加/移除群成员失败 — userId 不正确或无权限 → 先 `contact user search` 确认 userId，需当前用户为群管理员
 
 ---
 
-### update_field 更新单选/多选后历史数据异常
-**现象**
-- 更新选项后，已有单元格显示错乱或丢值
+## calendar 高频错误
 
-**原因**
-- 更新 `options` 时没有传完整列表
-- 已有 option 没保留原 `id`
-
-**解决**
-- 先 `dws aitable field get` 取完整配置
-- 更新时传完整 options 列表，已有项保留原 `id`
+- 时间格式错误 — 未使用 ISO-8601 格式 → 标准格式: `2026-03-10T14:00:00+08:00`
+- 会议室搜索报错 / 返空 — 企业会议室超 100 条未分组查询 → 先 `room list-groups` → 按 `--group-id` 逐组搜索
+- 参与者 / 会议室添加失败 — eventId 不正确 → 先 `event list` 或 `event create` 获取正确 eventId
 
 ---
 
-### delete_table 失败：cannot delete the last table
-**原因**: 该表是 Base 中最后一张表
-**解决**: 先新建一张表再删旧表；或改用 `dws aitable base delete`
+## contact 高频错误
+
+- `dept list-children` 报错 — `--id` 传了非整数值 → deptId 必须为整数，从 `dept search` 获取
 
 ---
 
-### create_fields / create_table 某些字段类型失败
-**已知边界**
-- `formula` 当前可能 `not supported yet`
-- 关联字段可能因下游主键约束失败
+## 通用排查三步法
 
-**建议**
-- 复杂字段拆开单独创建
-- 先建基础结构，再逐项补复杂字段
-
----
-
-## Agent 错误处理规则 (严格遵守)
-
-1. 遇到任何错误，加 `--verbose` 重试一次
-2. 仍然失败，把完整错误信息报告给用户，不要自行尝试替代方案
-3. 禁止: 打开浏览器、构造 HTTP 请求、使用 curl
-4. 禁止: 编造不存在的命令或参数
-5. 禁止: 跳过错误继续执行后续操作
-
-## 推荐排查顺序
-
-### 先确认 ID 链路
-1. `dws aitable base list` / `base search` → 拿 `baseId`
-2. `dws aitable base get --base-id <ID>` → 拿 `tableId`
-3. `dws aitable table get --base-id <ID>` → 拿 `fieldId`
-4. `dws aitable record query` / 结果对象 → 拿 `recordId`
-
-别跳步，别猜 ID。
-
-### 再确认 payload 结构
-- 新增/更新记录：看 `cells`（key 为 fieldId）
-- 新增字段：看 `--fields` JSON 数组
-- 更新字段：看 `--config`
-- 查询过滤：看 `--filters`
-
-### 最后确认批量上限
-- 字段批量：15
-- table / field 详情批量：10
-- record 批量：100
-
-## 调试命令模板
-
-```bash
-# 看 Base
-dws aitable base list --format json
-dws aitable base get --base-id <BASE_ID> --format json
-
-# 看 Table / Field
-dws aitable table get --base-id <BASE_ID> --table-ids <TABLE_ID> --format json
-dws aitable field get --base-id <BASE_ID> --table-id <TABLE_ID> --format json
-
-# 查记录
-dws aitable record query --base-id <BASE_ID> --table-id <TABLE_ID> --limit 10 --format json
-
-# 新增记录
-dws aitable record create --base-id <BASE_ID> --table-id <TABLE_ID> \
-  --records '[{"cells":{"fldXXX":"值"}}]' --format json
-```
-
-## 一句话原则
-
-- **别再用旧 schema。**
-- **别猜 ID。**
-- **复杂参数一律用 JSON。**
-- **先读结构，再写数据。**
-
+1. **确认 ID** — 从最顶层资源逐级获取，不猜 ID、不跳步
+2. **确认参数** — flag 用 kebab-case，JSON 用 camelCase；特殊字段查产品参考文档确认格式
+3. **确认限制** — 检查批量上限和已知约束（各产品注意事项见对应产品参考文档）

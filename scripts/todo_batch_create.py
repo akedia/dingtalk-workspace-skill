@@ -10,7 +10,9 @@ todos.json 格式:
     [
         {"title": "修复线上Bug", "executors": "userId1,userId2", "priority": 40},
         {"title": "写周报", "executors": "userId1", "due": "2026-03-15"},
-        {"title": "代码评审", "executors": "userId1"}
+        {"title": "代码评审", "executors": "userId1"},
+        {"title": "每日站会", "executors": "userId1", "due": "2026-03-20",
+         "recurrence": "DTSTART:20260320T020000Z\\nRRULE:FREQ=DAILY;INTERVAL=1"}
     ]
 
 字段说明:
@@ -18,6 +20,7 @@ todos.json 格式:
 - executors: 执行者 userId，多人逗号分隔 (必填)
 - priority:  优先级 10=低/20=普通/30=较高/40=紧急 (可选)
 - due:       截止日期 YYYY-MM-DD 或毫秒时间戳 (可选)
+- recurrence: 循环待办规则 (可选，需同时有 due)；字符串内需含换行，与 dws --recurrence 一致
 """
 
 import sys
@@ -84,6 +87,13 @@ def validate_todo(item: Dict[str, Any], idx: int) -> bool:
     if priority is not None and int(priority) not in ALLOWED_PRIORITIES:
         print(f"  ✗ #{idx+1} 无效优先级：{priority}")
         return False
+    recurrence = item.get('recurrence')
+    if recurrence and not str(recurrence).strip():
+        print(f"  ✗ #{idx+1} recurrence 不能为空字符串")
+        return False
+    if recurrence and not item.get('due'):
+        print(f"  ✗ #{idx+1} 设置 recurrence 时必须提供 due")
+        return False
     return True
 
 
@@ -128,6 +138,10 @@ def main():
         due = parse_due(item.get('due'))
         if due:
             cmd_args.extend(['--due', due])
+        recurrence = item.get('recurrence')
+        if recurrence:
+            rr = str(recurrence).replace('\\n', '\n')
+            cmd_args.extend(['--recurrence', rr])
 
         result = run_dws(cmd_args, dry_run=dry_run)
         if result:

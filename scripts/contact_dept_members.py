@@ -3,8 +3,8 @@
 按部门名称搜索并列出所有成员（自动 deptId 解析）
 
 用法:
-    python contact_dept_members.py --keyword "技术部"
-    python contact_dept_members.py --keyword "产品" --dry-run
+    python contact_dept_members.py --query "技术部"
+    python contact_dept_members.py --query "产品" --dry-run
 """
 
 import sys
@@ -40,15 +40,15 @@ def main():
         description='按部门名称搜索并列出所有成员'
     )
     parser.add_argument(
-        '--keyword', required=True, help='部门名称关键词'
+        '--query', required=True, help='部门名称关键词'
     )
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
 
-    print(f'🔍 搜索部门: {args.keyword}')
+    print(f'🔍 搜索部门: {args.query}')
     dept_data = run_dws([
         'contact', 'dept', 'search',
-        '--keyword', args.keyword, '--format', 'json',
+        '--query', args.query, '--format', 'json',
     ], dry_run=args.dry_run)
 
     if args.dry_run:

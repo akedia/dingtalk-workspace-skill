@@ -22,17 +22,20 @@ dws auth logout
 
 30 天内使用一次即自动续期。
 
+### 认证失败处理
+- 命令返回 `AUTH_TOKEN_EXPIRED` / `USER_TOKEN_ILLEGAL` / "Token验证失败" → 执行 `dws auth login` 重新登录
+
 ### Headless 环境 (CI/CD)
 
 ```bash
 # 桌面: 导出凭证
-dws auth export > credentials.json
+dws auth import credentials.json
 
-# 服务器: 设置环境变量
-export DINGTALK_CREDENTIALS_FILE=~/.config/dingtalk/credentials.json
+# 服务器: 导入凭证
+dws auth import credentials.json
 ```
+refresh_token 单设备独占，远程刷新后源设备凭证失效。
 
-⚠️ refresh_token 单设备独占，远程刷新后源设备凭证失效。
 
 ## 全局标志
 
@@ -46,6 +49,8 @@ export DINGTALK_CREDENTIALS_FILE=~/.config/dingtalk/credentials.json
 | `--timeout` | | HTTP 超时 (秒) | 30 |
 | `--token` | | API Token (覆盖配置) | 无 |
 | `--mock` | | Mock 数据 (开发用) | false |
+| `--client-id` | | 覆盖 OAuth Client ID | 无 |
+| `--client-secret` | | 覆盖 OAuth Client Secret | 无 |
 
 ## 输出格式
 
@@ -68,8 +73,9 @@ export DINGTALK_CREDENTIALS_FILE=~/.config/dingtalk/credentials.json
 
 | 变量 | 说明 |
 |------|------|
-| `DINGTALK_TOKEN` | API Token (最高优先级) |
-| `DINGTALK_CREDENTIALS_FILE` | 导出的凭证文件路径 |
-| `DINGTALK_MCP_URL` | MCP Server URL (覆盖内置) |
+| `DWS_CONFIG_DIR` | 覆盖默认配置目录 |
+| `DWS_SERVERS_URL` | 自定义服务发现端点 |
+| `DWS_CLIENT_ID` | 覆盖 OAuth Client ID (DingTalk AppKey) |
+| `DWS_CLIENT_SECRET` | 覆盖 OAuth Client Secret (DingTalk AppSecret) |
 
-凭证优先级: `--token` > `DINGTALK_TOKEN` > `DINGTALK_CREDENTIALS_FILE` > OAuth token.json
+凭证优先级: `--token` > `DWS_CLIENT_ID`/`DWS_CLIENT_SECRET` > OAuth 加密存储 (.data)

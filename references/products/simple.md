@@ -20,34 +20,30 @@ Flags:
 
 ---
 
-## conference — 视频会议
-### 创建预约会议
+## approval — 审批
+
+### 查询审批表单
 ```
 Usage:
-  dws conference meeting create [flags]
+  dws approval list-forms [flags]
 Example:
-  dws conference meeting create --title "产品评审会" \
-    --start 2026-03-11T14:00:00+08:00 --end 2026-03-11T15:00:00+08:00
-Flags:
-      --end string     结束时间 ISO-8601 格式 (必填)
-      --start string   开始时间 ISO-8601 格式 (必填)
-      --title string   会议标题 (必填)
+  dws approval list-forms --format json
 ```
 
-注意: 不会自动关联日历日程。
-
-关键区分: conference(视频会议预约) vs calendar event(日历日程)
-
----
-
-## live — 直播
-
-### 查看我的直播列表
+### 查询审批实例详情
 ```
 Usage:
-  dws live stream list [flags]
+  dws approval detail --instance-id <ID> [flags]
 Example:
-  dws live stream list
+  dws approval detail --instance-id <ID> --format json
+```
+
+### 查询审批任务
+```
+Usage:
+  dws approval tasks --instance-id <ID> [flags]
+Example:
+  dws approval tasks --instance-id <ID> --format json
 ```
 
 ---
@@ -55,12 +51,12 @@ Example:
 ## 意图判断
 
 - 用户说"开发文档/API 文档/接口文档" → `devdoc article search`
-- 用户说"预约会议/视频会议" → `conference meeting create`
-- 用户说"直播/我的直播" → `live stream list`
+- 用户说"审批/请假/报销/出差" → `approval`
 
 ## 上下文传递表
 
 | 操作 | 从返回中提取 | 用于 |
 |------|-------------|------|
 | `devdoc article search` | 文档链接 | 直接展示给用户 |
-| `conference meeting create` | 会议 ID、入会链接 | 分享给参会者 |
+| `approval list-forms` | processCode | `approval detail` / `approval tasks` 等 |
+| `approval tasks` | taskId | `approval approve` / `approval reject` |

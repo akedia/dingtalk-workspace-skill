@@ -17,9 +17,9 @@ Example:
 Usage:
   dws contact user search [flags]
 Example:
-  dws contact user search --keyword "张三"
+  dws contact user search --query "张三"
 Flags:
-      --keyword string   搜索关键词 (必填)
+      --query string   搜索关键词 (必填)
 ```
 
 #### 按手机号搜索用户
@@ -49,19 +49,9 @@ Flags:
 Usage:
   dws contact dept search [flags]
 Example:
-  dws contact dept search --keyword "技术部"
+  dws contact dept search --query "技术部"
 Flags:
-      --keyword string   搜索关键词 (必填)
-```
-
-#### 查看子部门 — --id 必须为整数类型的部门 ID
-```
-Usage:
-  dws contact dept list-children [flags]
-Example:
-  dws contact dept list-children --id 12345
-Flags:
-      --id string   部门 ID，必须为整数 (必填)
+      --query string   搜索关键词 (必填)
 ```
 
 #### 查看部门成员
@@ -80,7 +70,6 @@ Flags:
 用户说"找人/搜人" → `user search`（按名字）或 `user search-mobile`（按手机号）
 用户说"查用户详情" → `user get`（需 userId）
 用户说"找部门/哪个部门" → `dept search`
-用户说"下级部门" → `dept list-children`（需 deptId）
 用户说"部门有谁/部门成员" → `dept list-members`（需 deptId）
 
 ## 核心工作流
@@ -90,11 +79,10 @@ Flags:
 dws contact user get-self --format json
 
 # 2. 按名字搜索同事 — 提取 userId
-dws contact user search --keyword "张三" --format json
+dws contact user search --query "张三" --format json
 
 # 3. 查看部门结构 — 提取 deptId
-dws contact dept search --keyword "技术部" --format json
-dws contact dept list-children --id <deptId> --format json
+dws contact dept search --query "技术部" --format json
 
 # 4. 查看部门成员
 dws contact dept list-members --ids <deptId> --format json
@@ -111,11 +99,10 @@ dws contact dept list-members --ids <deptId> --format json
 ## 注意事项
 
 - `user get-self` 是获取 userId 的最快方式，其他产品的 --users/--executor 都需要 userId
-- `dept list-children --id` 必须传入整数类型的部门 ID，非整数会报错
 - `user get --ids` 和 `dept list-members --ids` 都支持批量查询，逗号分隔
 
 ## 自动化脚本
 
 | 脚本 | 场景 | 用法 |
 |------|------|------|
-| [contact_dept_members.py](../../scripts/contact_dept_members.py) | 按部门名称搜索并列出所有成员 | `python contact_dept_members.py --keyword "技术部"` |
+| [contact_dept_members.py](../../scripts/contact_dept_members.py) | 按部门名称搜索并列出所有成员 | `python contact_dept_members.py --query "技术部"` |
