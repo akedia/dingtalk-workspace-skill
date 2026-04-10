@@ -3,8 +3,11 @@
 ## 认证
 
 ```bash
-# 首次: 扫码登录 (浏览器自动打开)
+# 首次: 扫码登录（设备授权码模式，扫码选对应组织）
 dws auth login
+
+# Headless 环境（服务器）
+dws auth login --device   # 输出授权码，手机扫码确认
 
 # 查看状态
 dws auth status
@@ -22,20 +25,30 @@ dws auth logout
 
 30 天内使用一次即自动续期。
 
+### 双版本认证状态（2026-04-10）
+
+| 版本 | 路径 | 登录组织 | 用途 |
+|------|------|----------|------|
+| dws.local v1.0.8 | `~/.local/bin/dws.local` | 成都创人所爱科技股份有限公司（tap4fun） | 主力，处理大多数产品 |
+| dws PC v0.2.27 | `~/.local/bin/dws.ssh-wrapper.bak` | 成都创人所爱科技股份有限公司（tap4fun） | 补充，处理 doc/drive/mail/minutes/aiapp 等 |
+
+`dws` wrapper 自动路由，无需手动选择版本。
+
 ### 认证失败处理
 - 命令返回 `AUTH_TOKEN_EXPIRED` / `USER_TOKEN_ILLEGAL` / "Token验证失败" → 执行 `dws auth login` 重新登录
+- 若 dws.local 认证失效：`dws.local auth login --device`，扫码选 tap4fun 组织
 
 ### Headless 环境 (CI/CD)
 
 ```bash
-# 桌面: 导出凭证
-dws auth import credentials.json
+# 导出凭证（PC）
+dws auth export credentials.json
 
-# 服务器: 导入凭证
+# 服务器导入
 dws auth import credentials.json
 ```
-refresh_token 单设备独占，远程刷新后源设备凭证失效。
 
+> refresh_token 单设备独占，远程刷新后源设备凭证失效。
 
 ## 全局标志
 
@@ -47,20 +60,20 @@ refresh_token 单设备独占，远程刷新后源设备凭证失效。
 | `--yes` | `-y` | 跳过确认提示 | false |
 | `--dry-run` | | 预览操作不执行 | false |
 | `--timeout` | | HTTP 超时 (秒) | 30 |
-| `--token` | | API Token (覆盖配置) | 无 |
-| `--mock` | | Mock 数据 (开发用) | false |
+| `--token` | | API Token（覆盖配置） | 无 |
+| `--mock` | | Mock 数据（开发用） | false |
 | `--client-id` | | 覆盖 OAuth Client ID | 无 |
 | `--client-secret` | | 覆盖 OAuth Client Secret | 无 |
 
 ## 输出格式
 
-### --format json (机器可读, Agent 必须使用)
+### --format json（Agent 必须使用）
 
 ```json
 {"success": true, "body": {...}}
 ```
 
-### --format table (人类可读, 默认)
+### --format table（默认，人类可读）
 
 ```
 已创建 AI 表格 "项目管理" (UUID: abc123)

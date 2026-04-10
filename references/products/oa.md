@@ -87,6 +87,8 @@ Flags:
       --start string          开始时间 ISO-8601 (如 2026-03-10T00:00:00+08:00) (必填)
 ```
 
+> ⚠️ **已知 Bug（v1.0.8）**：`list-initiated` 传任意时间格式均返回"参数错误"，当前版本不可用。临时方案：用 `list-pending`（含 status=COMPLETED 的历史记录）替代。
+
 ### 获取当前用户可见的审批表单列表
 ```
 Usage:
