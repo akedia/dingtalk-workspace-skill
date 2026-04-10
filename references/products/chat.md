@@ -15,6 +15,11 @@
 | `message send-by-bot` | 机器人发消息（群聊或批量单聊） |
 | `message recall-by-bot` | 机器人撤回消息（群聊或批量单聊） |
 | `message send-by-webhook` | 自定义机器人 Webhook 发消息 |
+| `message send` | 以**用户身份**发消息（群聊或单聊）⚠️ PC only |
+| `message list` | 拉取群聊/单聊历史消息 ⚠️ PC only |
+| `message list-topic-replies` | 拉取群话题回复消息列表 ⚠️ PC only |
+
+> ⚠️ **版本路由**: `message send` / `message list` / `message list-topic-replies` 仅 PC 版(v0.2.27)支持，local 版(v1.0.8)无此能力，调用时 wrapper 须路由到 PC。
 
 ---
 
@@ -203,6 +208,56 @@ Flags:
 
 ---
 
+## message send — 以用户身份发消息 ⚠️ PC only
+
+以 Yao 的 OAuth 身份（非机器人）发送消息，支持群聊和单聊。
+
+```
+Usage:
+  dws chat message send [flags]
+Example:
+  dws chat message send --group <openConversationId> --text "下午3点开会" --format json
+  dws chat message send --user <userId> --text "收到" --format json
+Flags:
+      --group string              群聊 openconversation_id（群聊时必填）
+      --user string               单聊用户 userId（单聊时与 --open-dingtalk-id 二选一）
+      --open-dingtalk-id string   单聊用户 openDingTalkId
+      --text string               消息内容 (必填)
+```
+
+---
+
+## message list — 拉取历史消息 ⚠️ PC only
+
+```
+Usage:
+  dws chat message list [flags]
+Example:
+  dws chat message list --group <openConversationId> --time "2026-04-01 00:00:00" --format json
+  dws chat message list --user <userId> --time "2026-04-01 00:00:00" --limit 50 --format json
+Flags:
+      --group string              群聊 openconversation_id（群聊时必填）
+      --user string               单聊用户 userId
+      --open-dingtalk-id string   单聊用户 openDingTalkId
+      --time string               开始时间，格式: yyyy-MM-dd HH:mm:ss (必填)
+      --limit int                 返回数量，不传则不限制
+      --forward bool              true=拉给定时间之后，false=拉之前 (默认 true)
+```
+
+> 翻页：`hasMore=true` 时用返回结果中的边界 `createTime` 作为下次 `--time` 参数。
+> 消息含 `openConvThreadId` 字段时为话题消息，可用 `list-topic-replies` 拉回复。
+
+---
+
+## message list-topic-replies — 拉取话题回复 ⚠️ PC only
+
+```
+Example:
+  dws chat message list-topic-replies --topic-id <openConvThreadId> --time "2026-04-01 00:00:00"
+```
+
+---
+
 ## message send-by-webhook — 自定义机器人 Webhook 发消息
 
 ```
@@ -234,6 +289,8 @@ Flags:
 - 用户说"机器人给张三发消息" → 先 `contact user search` 获取 userId，再 `message send-by-bot --users`
 - 用户说"通过 Webhook 发告警" / 用户有 Webhook Token → `message send-by-webhook`
 - 用户说"撤回机器人消息" → `message recall-by-bot`
+- 用户说"以我的名义发消息/不要用机器人发" → `message send`（**PC only**）
+- 用户说"查一下群里最近的消息/拉聊天记录" → `message list`（**PC only**）
 - 用户说"查一下我的机器人" → `bot search`
 - 用户说"把机器人加到群里" → `group members add-bot`
 
