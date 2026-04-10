@@ -40,7 +40,7 @@ cli_version: ">=1.0.8"
 | `aiapp` | AI应用：创建/查询/修改 ⚡PC | [aiapp.md](./references/products/aiapp.md) |
 | `conference` | 视频会议：预约/管理 ⚡PC | [conference.md](./references/products/conference.md) |
 | `oa` | OA审批：待处理/同意/拒绝/撤销/记录 | [oa.md](./references/products/oa.md) |
-| `report` | 日志：按模板创建/收件箱/已发送/模板/统计 | [report.md](./references/products/report.md) |
+| `report` | 日志：按模板创建/收件箱/已发送/模板/统计 ⚡PC | [report.md](./references/products/report.md) |
 | `todo` | 待办：创建/查询/修改/标记完成/删除 | [todo.md](./references/products/todo.md) |
 | `workbench` | 工作台：应用管理 | [workbench.md](./references/products/workbench.md) |
 
