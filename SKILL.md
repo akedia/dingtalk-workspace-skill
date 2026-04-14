@@ -73,6 +73,27 @@ cli_version: ">=1.0.8"
 
 > 更多易混淆场景见 [intent-guide.md](./references/intent-guide.md)
 
+## 配合 OpenClaw DingTalk 插件：@ 提及用户
+
+在群聊回复中 @ 指定用户，需要两步：
+
+**Step 1 — 查询 staffId**
+```bash
+dws contact user search --keyword "姓名" --format json
+# 返回 userId，即 staffId
+```
+
+**Step 2 — 在回复文本中嵌入 @ 标记**
+```
+<at:STAFFID> 你好，请查看
+```
+- `<at:STAFFID>` 会被 DingTalk 插件转换为真实的 @ 通知
+- 只在群聊回复中有效，私聊无效
+- 发送者会被自动 @，无需手动添加
+- 不要用 `@姓名` 纯文本写法，不会触发真实通知
+
+> 示例：查到齐梦瑶的 staffId 为 `112737011040053728`，回复中写 `<at:112737011040053728> 请查看` 即可触发真实 @ 通知。
+
 ## 已知限制与 Bug
 
 | 问题 | 说明 |
